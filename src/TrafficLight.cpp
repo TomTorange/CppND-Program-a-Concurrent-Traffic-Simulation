@@ -78,6 +78,7 @@ void TrafficLight::cycleThroughPhases()
     std::random_device rd;
     std::mt19937 mt(rd());
     std::uniform_real_distribution<double> cycleDurationRange(4000, 6000);
+
     // set cycle duration
     double cycleDuration = cycleDurationRange(mt);
   
