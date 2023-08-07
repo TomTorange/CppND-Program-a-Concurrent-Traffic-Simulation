@@ -17,7 +17,14 @@ T MessageQueue<T>::receive()
     std::unique_lock<std::mutex> ulck(_mutex);
     _condition.wait(ulck, [this]{return !_queue.empty();});
     T newMessage = std::move(_queue.back());
-    _queue.pop_back();
+
+    // Consider using _queue.clear() as it will make the performance better. NOT using _queue.pop_back()
+    // message queue has to be flushed out during every call using the clear() function.
+    // At peripheral intersections Traffic is less. As number of changes in traffic light at these intersections is more compared to number of vehicles approaching, there will be accumulation of Traffic light messages in _queue.
+    // By the time new vehicle approaches at any of these peripheral intersections it would be receiving out some older traffic light msg. That's the reason it seems vehicles are crossing red at these intersection, in fact they are crossing based on some previous green signal in that _queue.
+    // But once new traffic light msg arrives, all the older msgs are redundant. So we have to clear _queue at send (as soon as new msg arrives).
+    // For central intersection, _queue clear/ no clear won't be a problem, as traffic is huge there it will have enough receives to keep it empty for new msg.
+    _queue.clear();
 
     return newMessage;
 }
@@ -72,7 +79,10 @@ void TrafficLight::cycleThroughPhases()
     // and toggles the current phase of the traffic light between red and green and sends an update method 
     // to the message queue using move semantics. The cycle duration should be a random value between 4 and 6 seconds. 
     // Also, the while-loop should use std::this_thread::sleep_for to wait 1ms between two cycles. 
-  
+
+    // We would recommend referring to the implementation of sleep_for() used in the while loop with a 1 ms condition for each cycle within the drive() function in the vehicle.cpp file.
+    // Don't forget to implement both parts of FP.2
+
     // set-up random number generator
     std::random_device rd;
     std::mt19937 mt(rd());
@@ -87,6 +97,7 @@ void TrafficLight::cycleThroughPhases()
     cycleTimeStart = std::chrono::high_resolution_clock::now();
 
     // infinite loop
+    // Implemented infinite loop to that measures time between two cycles and togles the traffic light phases
     while (true) 
     {
         // sleep at every iteration to reduce CPU usage
